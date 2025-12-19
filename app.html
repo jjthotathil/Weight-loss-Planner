@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Loss Planner (Optimized)</title>
+    <style>
+        /* CSS VARIABLES & RESET */
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary: #2dd4bf;
+            --secondary: #fb7185;
+            --accent: #38bdf8;
+            --border: #334155;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            background: var(--primary);
+            color: var(--bg-dark);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--text-primary);
+        }
+
+        button.text-only {
+            background: transparent;
+            color: var(--accent);
+            padding: 0;
+            font-size: 0.9rem;
+        }
+
+        button.active {
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            box-sizing: border-box;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--border);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .grid-auto {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .tag {
+            background: rgba(45, 212, 191, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .ingredient-pill {
+            font-size: 0.85rem;
+            background: var(--bg-dark);
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            margin-right: 0.3rem;
+            margin-bottom: 0.3rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="root" class="app-container"></div>
+
+    <script>
+        // ==========================================
+        // DATA: RECIPES (1500 kcal baseline approx)
+        // ==========================================
+        const recipes = [
+            // BREAKFAST
+            { id: 'b1', name: 'Oatmeal with Mango', type: 'breakfast', calories: 400, protein: 15, carbs: 70, fat: 6, ingredients: [{ name: 'Oats (Raw)', amount: 60, unit: 'g' }, { name: 'Mango', amount: 80, unit: 'g' }, { name: 'Protein Powder', amount: 15, unit: 'g' }], cost: 1.50 },
+            { id: 'b2', name: 'Egg & Spinach Scramble', type: 'breakfast', calories: 350, protein: 24, carbs: 5, fat: 25, ingredients: [{ name: 'Eggs', amount: 3, unit: 'large' }, { name: 'Spinach', amount: 100, unit: 'g' }], cost: 1.25 },
+            { id: 'b3', name: 'Yogurt & Banana Bowl', type: 'breakfast', calories: 320, protein: 20, carbs: 45, fat: 5, ingredients: [{ name: 'Yogurt', amount: 250, unit: 'g' }, { name: 'Banana', amount: 1, unit: 'medium' }], cost: 1.50 },
+            { id: 'b4', name: 'Protein Pancakes', type: 'breakfast', calories: 380, protein: 30, carbs: 35, fat: 10, ingredients: [{ name: 'Oats (Flower)', amount: 40, unit: 'g' }, { name: 'Egg', amount: 1, unit: 'large' }, { name: 'Protein Powder', amount: 25, unit: 'g' }], cost: 1.80 },
+
+            // LUNCH
+            { id: 'l1', name: 'Chicken Breast & Rice', type: 'lunch', calories: 500, protein: 45, carbs: 60, fat: 8, ingredients: [{ name: 'Chicken Breast (Raw)', amount: 180, unit: 'g' }, { name: 'Rice (Cooked)', amount: 200, unit: 'g' }, { name: 'Broccoli', amount: 100, unit: 'g' }], cost: 2.50 },
+            { id: 'l2', name: 'Tuna & Veggie Salad', type: 'lunch', calories: 400, protein: 40, carbs: 15, fat: 18, ingredients: [{ name: 'Tuna (Canned)', amount: 150, unit: 'g' }, { name: 'Mixed Veggies', amount: 200, unit: 'g' }, { name: 'Mayo/Oil', amount: 10, unit: 'g' }], cost: 2.00 },
+            { id: 'l3', name: 'Egg Fried Rice', type: 'lunch', calories: 450, protein: 20, carbs: 60, fat: 15, ingredients: [{ name: 'Rice (Cooked)', amount: 200, unit: 'g' }, { name: 'Eggs', amount: 2, unit: 'large' }, { name: 'Mixed Veggies', amount: 100, unit: 'g' }], cost: 1.20 },
+
+            // DINNER
+            { id: 'd1', name: 'Chicken & Green Beans', type: 'dinner', calories: 500, protein: 40, carbs: 40, fat: 15, ingredients: [{ name: 'Chicken Breast (Raw)', amount: 160, unit: 'g' }, { name: 'Green Beans', amount: 150, unit: 'g' }, { name: 'Rice (Cooked)', amount: 120, unit: 'g' }], cost: 2.50 },
+            { id: 'd2', name: 'Tuna & Rice Bowl', type: 'dinner', calories: 450, protein: 35, carbs: 50, fat: 10, ingredients: [{ name: 'Tuna (Canned)', amount: 130, unit: 'g' }, { name: 'Rice (Cooked)', amount: 180, unit: 'g' }, { name: 'Cucumber', amount: 80, unit: 'g' }], cost: 1.80 },
+            { id: 'd3', name: 'Omelette with Veggies', type: 'dinner', calories: 400, protein: 24, carbs: 10, fat: 28, ingredients: [{ name: 'Eggs', amount: 3, unit: 'large' }, { name: 'Spinach/Peppers', amount: 150, unit: 'g' }], cost: 1.50 },
+
+            // SNACK
+            { id: 's1', name: 'Protein Shake', type: 'snack', calories: 120, protein: 25, carbs: 2, fat: 1, ingredients: [{ name: 'Protein Powder', amount: 30, unit: 'g' }], cost: 1.00 },
+            { id: 's2', name: 'Banana', type: 'snack', calories: 100, protein: 1, carbs: 25, fat: 0, ingredients: [{ name: 'Banana', amount: 1, unit: 'medium' }], cost: 0.30 },
+            { id: 's3', name: 'Boiled Eggs (2)', type: 'snack', calories: 140, protein: 12, carbs: 1, fat: 10, ingredients: [{ name: 'Eggs', amount: 2, unit: 'large' }], cost: 0.50 }
+        ];
+
+        // ==========================================
+        // LOGIC
+        // ==========================================
+        const logic = {
+            calculateBMR: (w, h, a, g) => (g === 'male' ? 10 * w + 6.25 * h - 5 * a + 5 : 10 * w + 6.25 * h - 5 * a - 161),
+            calculateTDEE: (bmr, act) => {
+                const map = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+                return Math.round(bmr * (map[act] || 1.2));
+            },
+            calculateMinMonths: (tdee, currentW, targetW) => {
+                if (currentW <= targetW) return 1;
+                const maxDeficit = Math.max(0, tdee - 1200);
+                if (maxDeficit < 100) return 12;
+                const totalLossKg = currentW - targetW;
+                const totalLossCals = totalLossKg * 7700;
+                return Math.max(1, Math.ceil((totalLossCals / maxDeficit) / 30));
+            },
+            getCalorieEstimate: (tdee, currentW, targetW, months) => {
+                if (currentW <= targetW) return { calories: tdee, warning: "Goal Reached" };
+                const totalLoss = currentW - targetW;
+                const totalDeficit = totalLoss * 7700;
+                const days = months * 30;
+                const dailyDeficit = Math.round(totalDeficit / days);
+                let cal = tdee - dailyDeficit;
+                if (cal < 1200) return { calories: 1200, warning: "Min Safe Limit (1200)" };
+                return { calories: cal, warning: null };
+            },
+            // NEW: GENERATE & SCALE PLAN
+            generateAndScalePlan: (targetCals) => {
+                const types = { breakfast: [], lunch: [], dinner: [], snack: [] };
+                recipes.forEach(r => types[r.type].push(r));
+
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+                // 1. Generate Base Plan (Random)
+                const basePlan = days.map((day, i) => {
+                    return {
+                        day,
+                        meals: {
+                            breakfast: { ...types.breakfast[i % types.breakfast.length] || recipes[0] },
+                            lunch: { ...types.lunch[i % types.lunch.length] || recipes[4] },
+                            dinner: { ...types.dinner[i % types.dinner.length] || recipes[7] },
+                            snack: { ...types.snack[i % types.snack.length] || recipes[10] }
+                        }
+                    };
+                });
+
+                // 2. Calculate Base Average Calories
+                let totalBaseCals = 0;
+                basePlan.forEach(d => {
+                    Object.values(d.meals).forEach(m => totalBaseCals += m.calories);
+                });
+                const avgBaseCals = totalBaseCals / 7;
+
+                // 3. Calculate Scale Factor
+                const scale = targetCals / avgBaseCals;
+
+                // 4. Scale Everything
+                const stats = { calories: 0, protein: 0, carbs: 0, fats: 0 }; // Calc actual avg stats
+
+                const scaledPlan = basePlan.map(d => {
+                    const scaledMeals = {};
+                    Object.entries(d.meals).forEach(([type, m]) => {
+                        // Cloning ingredients to avoid mutation issues
+                        const ingredients = m.ingredients.map(ing => ({
+                            ...ing,
+                            amount: Math.round(ing.amount * scale)
+                        }));
+
+                        scaledMeals[type] = {
+                            ...m,
+                            calories: Math.round(m.calories * scale),
+                            protein: Math.round(m.protein * scale),
+                            carbs: Math.round(m.carbs * scale),
+                            fat: Math.round(m.fat * scale),
+                            cost: m.cost * scale,
+                            ingredients
+                        };
+
+                        // Accumulate stats for dashboard
+                        stats.calories += scaledMeals[type].calories;
+                        stats.protein += scaledMeals[type].protein;
+                        stats.carbs += scaledMeals[type].carbs;
+                        stats.fats += scaledMeals[type].fat;
+                    });
+                    return { day: d.day, meals: scaledMeals };
+                });
+
+                // Average daily stats for Dashboard
+                return {
+                    plan: scaledPlan,
+                    stats: {
+                        calories: Math.round(stats.calories / 7),
+                        protein: Math.round(stats.protein / 7),
+                        carbs: Math.round(stats.carbs / 7),
+                        fats: Math.round(stats.fats / 7)
+                    }
+                };
+            },
+            generateGrocery: (plan) => {
+                const map = {};
+
+                // NORMALIZATION MAP
+                const synonyms = {
+                    'eggs (boiled)': 'Eggs', 'boiled eggs': 'Eggs', 'boiled eggs (2)': 'Eggs', 'egg': 'Eggs', 'eggs': 'Eggs',
+                    'chicken breast (raw)': 'Chicken Breast', 'chicken': 'Chicken Breast',
+                    'rice (cooked)': 'Rice', 'rice': 'Rice',
+                    'oats (raw)': 'Oats', 'oats (flower)': 'Oats',
+                    'banana': 'Banana',
+                    'mango': 'Mango',
+                    'spinach': 'Spinach', 'spinach/peppers': 'Spinach/Peppers',
+                    'mayo/oil': 'Oil/Mayo', 'oil': 'Oil/Mayo'
+                };
+
+                plan.forEach(d => Object.values(d.meals).forEach(m => m.ingredients.forEach(i => {
+                    const rawName = i.name.toLowerCase();
+                    // Basic normalization
+                    let key = i.name;
+                    // Check synonyms first
+                    Object.keys(synonyms).forEach(s => {
+                        if (rawName.includes(s) || s === rawName) key = synonyms[s];
+                    });
+
+                    if (!map[key]) map[key] = { name: key, unit: i.unit, amount: 0, estimatedCost: 0, category: 'Pantry' };
+
+                    // UNIT NORMALIZATION
+                    let amount = i.amount;
+                    if (key === 'Eggs') {
+                        // Force Eggs to be Count
+                        map[key].unit = 'count';
+                        if (i.unit && (i.unit.includes('g') || i.unit === 'gram')) {
+                            amount = i.amount / 50; // Assume 50g per egg
+                        }
+                    }
+
+                    map[key].amount += amount;
+                    map[key].estimatedCost += ((m.cost || 0) / m.ingredients.length);
+
+                    // Re-categorize based on normalized name
+                    const n = key.toLowerCase();
+                    if (['chicken', 'egg', 'tuna', 'protein'].some(x => n.includes(x))) map[key].category = 'Meat & Protein';
+                    else if (['apple', 'mango', 'banana', 'spinach', 'vegetables', 'greens', 'cucumber', 'beans', 'broccoli', 'pepper'].some(x => n.includes(x))) map[key].category = 'Produce';
+                    else if (['yogurt'].some(x => n.includes(x))) map[key].category = 'Dairy';
+                })));
+
+                // Post-process for rounding
+                const list = Object.values(map).map(item => {
+                    if (item.name === 'Eggs') item.amount = Math.ceil(item.amount);
+                    else item.amount = Math.round(item.amount * 10) / 10; // 1 decimal for others
+                    return item;
+                });
+
+                return list.sort((a, b) => a.name.localeCompare(b.name));
+            }
+        };
+
+        // ==========================================
+        // STATE & UI
+        // ==========================================
+        const appState = {
+            view: 'onboarding',
+            user: null,
+            stats: null,
+            plan: null,
+            grocery: null,
+            tracker: { steps: 0, water: 0, meds: [] },
+            facts: ["Consistency > Perfection.", "Protein increases satiety.", "Sleep aids weight loss."],
+            factIndex: 0
+        };
+
+        const root = document.getElementById('root');
+
+        setInterval(() => {
+            if (appState.view !== 'onboarding') {
+                appState.factIndex = (appState.factIndex + 1) % appState.facts.length;
+                const el = document.getElementById('fact-text');
+                if (el) el.innerText = `"${appState.facts[appState.factIndex]}"`;
+            }
+        }, 30000);
+
+        function render() {
+            root.innerHTML = '';
+            if (appState.view === 'onboarding') renderOnboarding();
+            else renderLayout();
+        }
+
+        function updateSlider(e) {
+            const w = +document.getElementById('weight').value || 80;
+            const h = +document.getElementById('height').value || 175;
+            const a = +document.getElementById('age').value || 30;
+            const g = document.getElementById('gender').value;
+            const act = document.getElementById('activity').value;
+            const tw = +document.getElementById('targetWeight').value || 70;
+
+            const bmr = logic.calculateBMR(w, h, a, g);
+            const tdee = logic.calculateTDEE(bmr, act);
+
+            const slider = document.getElementById('months');
+            if (slider) {
+                const minMonths = logic.calculateMinMonths(tdee, w, tw);
+                if (+slider.min !== minMonths) {
+                    slider.min = minMonths;
+                    slider.max = minMonths + 12;
+                    if (+slider.value < minMonths) slider.value = minMonths;
+                }
+                document.getElementById('min-month-tag').innerText = `Fastest: ${minMonths} Month(s)`;
+            }
+
+            const months = slider ? slider.value : 1;
+            document.getElementById('months-val').innerText = months + " Months";
+
+            const res = logic.getCalorieEstimate(tdee, w, tw, months);
+
+            const info = document.getElementById('slider-info');
+            if (info) {
+                info.innerHTML = `<span style="font-size:1.2rem; color:${res.warning ? 'var(--warning)' : 'var(--primary)'}">${res.calories} kcal/day</span>`;
+                if (res.warning) info.innerHTML += `<br><small style="color:var(--text-secondary)">${res.warning}</small>`;
+            }
+        }
+
+        function renderOnboarding() {
+            root.innerHTML = `
+                <div class="card" style="max-width: 600px; margin: 2rem auto;">
+                    <h2 style="color: var(--primary)">Smart Planner</h2>
+                    <p style="color: var(--text-secondary)">Enter goals. We scale the meals to fit YOU.</p>
+                    <form id="onboardingForm">
+                        <div class="grid grid-2">
+                             <div class="form-group"><label>Age</label><input type="number" id="age" value="30" onchange="updateSlider(this)"></div>
+                             <div class="form-group"><label>Gender</label><select id="gender" onchange="updateSlider(this)"><option value="male">Male</option><option value="female">Female</option></select></div>
+                        </div>
+                        <div class="grid grid-2">
+                            <div class="form-group"><label>Height (cm)</label><input type="number" id="height" value="175" onchange="updateSlider(this)"></div>
+                            <div class="form-group"><label>Current Weight (kg)</label><input type="number" id="weight" value="80" onchange="updateSlider(this)"></div>
+                        </div>
+                        
+                        <div class="form-group"><label>Target Weight (kg)</label><input type="number" id="targetWeight" value="70" onchange="updateSlider(this)"></div>
+                        
+                        <div class="form-group"><label>Activity</label><select id="activity" onchange="updateSlider(this)">
+                            <option value="sedentary">Sedentary</option>
+                            <option value="light">Light Activity</option>
+                            <option value="moderate">Moderate Activity</option>
+                            <option value="active">Active</option>
+                        </select></div>
+
+                        <!-- SLIDER -->
+                        <div class="card" style="background:rgba(255,255,255,0.05); margin-bottom:1.5rem;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                                <label style="color:var(--accent); margin:0;">Timeline to Goal</label>
+                                <span id="min-month-tag" class="tag">Fastest: 3 Month(s)</span>
+                            </div>
+                            <input type="range" id="months" min="1" max="12" value="3" oninput="updateSlider(this)">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;">
+                                <h3 id="months-val" style="margin:0;">3 Months</h3>
+                                <div id="slider-info" style="text-align:right;"></div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" style="width:100%;">Create Plan</button>
+                    </form>
+                </div>
+            `;
+            setTimeout(() => updateSlider(document.getElementById('weight')), 100);
+
+            document.getElementById('onboardingForm').onsubmit = (e) => {
+                e.preventDefault();
+                const d = {
+                    age: +document.getElementById('age').value,
+                    gender: document.getElementById('gender').value,
+                    height: +document.getElementById('height').value,
+                    weight: +document.getElementById('weight').value,
+                    targetWeight: +document.getElementById('targetWeight').value,
+                    months: +document.getElementById('months').value,
+                    activity: document.getElementById('activity').value
+                };
+
+                appState.user = d;
+                const bmr = logic.calculateBMR(d.weight, d.height, d.age, d.gender);
+                const tdee = logic.calculateTDEE(bmr, d.activity);
+                const est = logic.getCalorieEstimate(tdee, d.weight, d.targetWeight, d.months);
+
+                // GENERATE & SCALE
+                const result = logic.generateAndScalePlan(est.calories);
+
+                appState.plan = result.plan;
+                appState.stats = { ...result.stats, warning: est.warning }; // Use ACTUAL stats from plan
+                appState.grocery = logic.generateGrocery(appState.plan);
+
+                appState.view = 'dashboard';
+                render();
+            };
+        }
+
+        function renderLayout() {
+            root.innerHTML = '';
+            const header = document.createElement('header');
+            header.className = 'nav-bar';
+            header.innerHTML = `
+                <h1 style="margin:0;">My Planner</h1>
+                <div class="nav-buttons">
+                    <button class="${appState.view === 'dashboard' ? 'active' : 'outline'}" onclick="setView('dashboard')">Dashboard</button>
+                    <button class="${appState.view === 'meals' ? 'active' : 'outline'}" onclick="setView('meals')">Meal Plan</button>
+                    <button class="${appState.view === 'grocery' ? 'active' : 'outline'}" onclick="setView('grocery')">Grocery List</button>
+                </div>
+            `;
+            root.appendChild(header);
+
+            if (appState.stats.warning) {
+                const alert = document.createElement('div');
+                alert.style.padding = '1rem';
+                alert.style.background = 'rgba(239, 68, 68, 0.2)';
+                alert.style.border = '1px solid var(--danger)';
+                alert.style.color = '#fca5a5';
+                alert.style.marginBottom = '1rem';
+                alert.style.borderRadius = '0.5rem';
+                alert.innerText = appState.stats.warning;
+                root.appendChild(alert);
+            }
+
+            const main = document.createElement('main');
+            if (appState.view === 'dashboard') renderDashboard(main);
+            else if (appState.view === 'meals') renderMeals(main);
+            else if (appState.view === 'grocery') renderGrocery(main);
+            root.appendChild(main);
+        }
+
+        function renderDashboard(container) {
+            container.innerHTML = `
+                <div class="grid grid-auto">
+                    <div class="card">
+                        <h3>Daily Average (From Plan)</h3>
+                        <div class="stat-circle" style="text-align:center; padding:1rem;">
+                            <h1>${appState.stats.calories}</h1>
+                            <p style="color:var(--text-secondary)">Kcal / Day</p>
+                        </div>
+                        <div class="macros-flex" style="justify-content:space-around; text-align:center;">
+                            <div><b>${appState.stats.protein}g</b><br><small>Protein</small></div>
+                            <div><b>${appState.stats.carbs}g</b><br><small>Carbs</small></div>
+                            <div><b>${appState.stats.fats}g</b><br><small>Fats</small></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Smart Facts</h3>
+                        <p id="fact-text" style="font-style:italic; font-size:1.1rem;">"${appState.facts[appState.factIndex]}"</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMeals(container) {
+            container.innerHTML = `
+                <div class="grid grid-auto">
+                ${appState.plan.map((day, dIdx) => `
+                    <div class="card">
+                        <h3>${day.day}</h3>
+                        ${Object.entries(day.meals).map(([type, meal]) => `
+                            <div style="margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:1rem;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <strong style="color:var(--accent); text-transform:capitalize;">${type}</strong>
+                                    <button class="text-only" onclick="swapMeal(${dIdx}, '${type}')">Swap</button>
+                                </div>
+                                <div style="font-size:1.1rem; margin-bottom:0.25rem;">${meal.name}</div>
+                                <div style="margin-bottom:0.5rem;">
+                                    ${meal.ingredients.map(i => `<span class="ingredient-pill">${i.amount} ${i.unit} ${i.name}</span>`).join('')}
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:0.9rem; color:var(--text-secondary);">
+                                    <span>${meal.calories} kcal</span>
+                                    <span>P: ${meal.protein}g C: ${meal.carbs}g F: ${meal.fat}g</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderGrocery(container) {
+            if (!appState.grocery) appState.grocery = logic.generateGrocery(appState.plan);
+
+            const groups = {};
+            let total = 0;
+            appState.grocery.forEach(i => {
+                if (!groups[i.category]) groups[i.category] = [];
+                groups[i.category].push(i);
+                total += (i.estimatedCost || 0);
+            });
+
+            container.innerHTML = `
+                <div class="card" style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Estimated Weekly Cost: <span style="color:var(--success)">$${total.toFixed(2)}</span></h3>
+                    <small style="color:var(--text-secondary)">*Prices are approximate</small>
+                </div>
+                <div class="grid">
+                ${Object.entries(groups).map(([cat, items]) => `
+                    <div class="card">
+                        <h3 style="color:var(--primary)">${cat}</h3>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.5rem;">
+                            ${items.map(i => `
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <input type="checkbox">
+                                    <label style="margin:0; cursor:pointer;">${i.name} <span style="color:var(--text-secondary)">(${i.amount} ${i.unit})</span></label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        window.setView = (v) => { appState.view = v; render(); };
+        window.swapMeal = (dIdx, type) => {
+            const list = recipes.filter(r => r.type === type);
+            const current = appState.plan[dIdx].meals[type];
+            let nextIdx = (list.findIndex(r => r.id === current.id) + 1) % list.length;
+            // Need to apply Scale!
+            const scale = appState.stats.calories / (1550); // Rough approximation of base
+            // Better to re-gen whole plan but simple swap is ok for now.
+            // We can just grab the new recipe, scale it on the fly by average ratio
+            const newMeal = { ...list[nextIdx] };
+            // Simple re-scale logic for swap:
+            const ratio = current.calories / newMeal.calories; // Maintain calorie slot
+            newMeal.ingredients = newMeal.ingredients.map(i => ({ ...i, amount: Math.round(i.amount * ratio) }));
+            newMeal.calories = Math.round(newMeal.calories * ratio);
+            newMeal.protein = Math.round(newMeal.protein * ratio);
+            newMeal.carbs = Math.round(newMeal.carbs * ratio);
+            newMeal.fat = Math.round(newMeal.fat * ratio);
+
+            appState.plan[dIdx].meals[type] = newMeal;
+            appState.grocery = logic.generateGrocery(appState.plan);
+            render();
+        };
+
+        render();
+    </script>
+</body>
+
+</html>
